@@ -1,0 +1,93 @@
+{
+  "name": "ai_bot_voice",
+  "version": "1.0.1",
+  "description": "Ambernexus AI voice bubble widget — a framework-agnostic Web Component for browser-based real-time voice conversations with React, Vue, Next.js, Angular, Vite, and vanilla HTML/JS support.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "browser": "./dist/ambernexus-ai_bot_voice.min.js",
+  "unpkg": "./dist/ambernexus-ai_bot_voice.min.js",
+  "jsdelivr": "./dist/ambernexus-ai_bot_voice.min.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.mjs"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.mjs",
+      "require": "./dist/react.cjs",
+      "default": "./dist/react.mjs"
+    },
+    "./vue": {
+      "types": "./dist/vue.d.ts",
+      "import": "./dist/vue.mjs",
+      "require": "./dist/vue.cjs",
+      "default": "./dist/vue.mjs"
+    },
+    "./umd": "./dist/ambernexus-ai_bot_voice.umd.js",
+    "./min": "./dist/ambernexus-ai_bot_voice.min.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": [
+    "./dist/index.mjs",
+    "./dist/index.cjs",
+    "./dist/ambernexus-ai_bot_voice.umd.js",
+    "./dist/ambernexus-ai_bot_voice.min.js",
+    "./src/index.js"
+  ],
+  "scripts": {
+    "build": "rollup -c rollup.config.mjs",
+    "build:watch": "rollup -c rollup.config.mjs --watch",
+    "prepublishOnly": "npm run build",
+    "test": "echo \"No tests configured\" && exit 0"
+  },
+  "keywords": [
+    "ai",
+    "voice",
+    "voice-widget",
+    "voice-bot",
+    "web-component",
+    "custom-element",
+    "react",
+    "vue",
+    "nextjs",
+    "angular",
+    "vite",
+    "ambernexus",
+    "elevenlabs",
+    "conversational-ai"
+  ],
+  "author": "Ambernexus",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rajadurai-del/ai_bot_voice.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rajadurai-del/ai_bot_voice/issues"
+  },
+  "homepage": "https://github.com/rajadurai-del/ai_bot_voice#readme",
+  "peerDependencies": {
+    "react": ">=17.0.0",
+    "vue": ">=3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true },
+    "vue": { "optional": true }
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^4.18.0"
+  }
+}

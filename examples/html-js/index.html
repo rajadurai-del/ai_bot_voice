@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ai_bot_voice — HTML demo</title>
+    <style>
+      body { margin: 0; min-height: 100vh; background: #0b1226; color: #fff; font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif; }
+      .stage { position: fixed; inset: 0; display: flex; justify-content: end; align-items: end; padding: 24px; }
+      .hint { position: fixed; top: 24px; left: 24px; max-width: 420px; opacity: 0.8; font-size: 13px; line-height: 1.5; }
+      .hint code { background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <p class="hint">
+      Loaded from the local UMD build at <code>../../dist/ambernexus-ai_bot_voice.umd.js</code>.
+      Once published, swap the script tag for the CDN URL listed in the README.
+    </p>
+
+    <div class="stage">
+      <ambernexus-bubble-widget
+        button-label="Ask Nexus AI"
+        primary-color="#db2777"
+        accent-color="#f472b6"
+        bg-color="rgba(20,30,54,0.92)"
+        text-color="#ffffff"
+        width="320px"
+        height="380px"
+        bubble-count="32"
+        agent-id="77310792-06ee-4621-852b-df51fb58fa85"
+        user-id="12"
+        secs-left="600"
+        origin="browser"
+        overrides='{"timezone":"Asia/Kolkata","dynamic_variables":{}}'
+      ></ambernexus-bubble-widget>
+    </div>
+
+    <script src="../../dist/ambernexus-ai_bot_voice.umd.js"></script>
+    <script>
+      const widget = document.querySelector("ambernexus-bubble-widget");
+      widget.addEventListener("aw:start", (e) => console.log("started", e.detail));
+      widget.addEventListener("aw:mode", (e) => console.log("mode", e.detail.mode));
+      widget.addEventListener("aw:error", (e) => console.error("error", e.detail.message));
+      widget.addEventListener("aw:stop", () => console.log("stopped"));
+    </script>
+  </body>
+</html>
