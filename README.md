@@ -95,7 +95,7 @@ export default function App() {
 
 ### Next.js (App Router)
 
-The widget uses browser-only APIs (`document`, `customElements`, `WebSocket`, `AudioContext`), so render it on the client:
+The widget uses browser-only APIs (`document`, `customElements`, `WebSocket`, `AudioContext`), so render it in a client component:
 
 ```jsx
 "use client";
@@ -106,11 +106,38 @@ export default function Page() {
 }
 ```
 
-If you import the core (non-React) entry from a server component, do it via `dynamic`:
+#### Hydration safety
+
+As of **1.0.2**, the widget is hydration-safe. The host element (`<ambernexus-bubble-widget>`) is **never** mutated by the constructor or `connectedCallback` — all dynamic state (`data-mode`, `data-call-active`, the `--aw-*` CSS variables) lives on an internal `<div class="root">` inside the shadow DOM, which is invisible to React's reconciler. The HTML React renders on the server matches the HTML it sees on the client.
+
+If you're on **1.0.0 or 1.0.1** you may have seen warnings like:
+
+> A tree hydrated but some attributes of the server rendered HTML didn't match the client properties.
+> `- data-mode="idle"` `- data-call-active="false"` `- style={{--aw-primary:"#e51515", …}}`
+
+Upgrade to `1.0.2`+ to fix this — no app-side changes required.
+
+#### Optional extra safety (only if you cannot upgrade)
+
+If you must stay on an older version, you can keep the widget out of SSR with `next/dynamic`:
 
 ```jsx
+// WidgetClient.tsx
+"use client";
+import { AmbernexusBubbleWidget } from "ai_bot_voice/react";
+export default function WidgetClient(props) {
+  return <AmbernexusBubbleWidget {...props} />;
+}
+```
+
+```jsx
+// app/page.tsx
 import dynamic from "next/dynamic";
 const Widget = dynamic(() => import("./WidgetClient"), { ssr: false });
+
+export default function Page() {
+  return <Widget agentId="…" userId="12" />;
+}
 ```
 
 ### Vue 3

@@ -129,7 +129,7 @@ const TEMPLATE_HTML = `
       position: relative;
       z-index: 1;
     }
-    :host([data-call-active="true"]) .trigger-live { display: inline-flex; }
+    .root[data-call-active="true"] .trigger-live { display: inline-flex; }
     .trigger-live::before {
       content: "";
       width: 6px; height: 6px;
@@ -210,9 +210,9 @@ const TEMPLATE_HTML = `
       transition: background 0.3s ease, box-shadow 0.3s ease;
       flex-shrink: 0;
     }
-    :host([data-mode="connecting"]) .status-dot,
-    :host([data-mode="listening"]) .status-dot,
-    :host([data-mode="speaking"]) .status-dot {
+    .root[data-mode="connecting"] .status-dot,
+    .root[data-mode="listening"] .status-dot,
+    .root[data-mode="speaking"] .status-dot {
       animation: dotPulse 1.4s ease-in-out infinite;
     }
     @keyframes dotPulse {
@@ -246,7 +246,7 @@ const TEMPLATE_HTML = `
       padding-left: 4px;
       border-left: 1px solid rgba(255,255,255,0.18);
     }
-    :host([data-call-active="true"]) .call-timer { display: inline-block; }
+    .root[data-call-active="true"] .call-timer { display: inline-block; }
     .close {
       border: 0;
       width: 30px; height: 30px;
@@ -357,8 +357,8 @@ const TEMPLATE_HTML = `
       0%, 100% { transform: translateY(0) scale(1); }
       50% { transform: translateY(-3px) scale(1.03); }
     }
-    :host([data-mode="listening"]) .orb,
-    :host([data-mode="speaking"]) .orb {
+    .root[data-mode="listening"] .orb,
+    .root[data-mode="speaking"] .orb {
       animation: none;
       transform: scale(calc(1 + var(--aw-level, 0) * 0.18));
       transition: transform 0.08s ease-out;
@@ -436,7 +436,7 @@ const TEMPLATE_HTML = `
     .mic-btn .mic-slash { display: none; }
     .mic-btn.muted .mic-slash { display: block; }
     .mic-btn.muted .mic-on { display: none; }
-    :host([data-call-active="true"]) .mic-btn { display: inline-flex; }
+    .root[data-call-active="true"] .mic-btn { display: inline-flex; }
 
     .call-btn {
       flex: 1;
@@ -461,12 +461,12 @@ const TEMPLATE_HTML = `
     .call-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
     .call-btn:disabled { cursor: wait; opacity: 0.85; }
 
-    :host([data-mode="connecting"]) .call-btn {
+    .root[data-mode="connecting"] .call-btn {
       background: linear-gradient(145deg, #facc15, #ca8a04);
       box-shadow: 0 10px 24px rgba(234,179,8,0.45);
     }
-    :host([data-mode="listening"]) .call-btn,
-    :host([data-mode="speaking"]) .call-btn {
+    .root[data-mode="listening"] .call-btn,
+    .root[data-mode="speaking"] .call-btn {
       background: linear-gradient(145deg, #ef4444, #b91c1c);
       box-shadow: 0 10px 24px rgba(239,68,68,0.5);
     }
@@ -476,10 +476,10 @@ const TEMPLATE_HTML = `
       width: 18px; height: 18px;
     }
     .call-icon svg { width: 100%; height: 100%; fill: currentColor; }
-    :host([data-mode="connecting"]) .call-icon { display: none; }
-    :host([data-mode="listening"]) .icon-start,
-    :host([data-mode="speaking"]) .icon-start { display: none; }
-    :host(:not([data-mode="listening"]):not([data-mode="speaking"])) .icon-end { display: none; }
+    .root[data-mode="connecting"] .call-icon { display: none; }
+    .root[data-mode="listening"] .icon-start,
+    .root[data-mode="speaking"] .icon-start { display: none; }
+    .root:not([data-mode="listening"]):not([data-mode="speaking"]) .icon-end { display: none; }
 
     .spinner {
       display: none;
@@ -489,11 +489,11 @@ const TEMPLATE_HTML = `
       border-top-color: #fff;
       animation: spin 0.8s linear infinite;
     }
-    :host([data-mode="connecting"]) .spinner { display: inline-block; }
+    .root[data-mode="connecting"] .spinner { display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 
-  <div class="root">
+  <div class="root" data-mode="idle" data-call-active="false">
     <button class="trigger" type="button" aria-label="Open assistant">
       <span class="trigger-orb" aria-hidden="true"></span>
       <span class="trigger-label label">Ask Revo AI</span>
@@ -602,12 +602,10 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
     this.callStartTime = 0;
     this.callTimerInterval = null;
     this.levelFrame = null;
-    this.setAttribute("data-mode", "idle");
-    this.setAttribute("data-call-active", "false");
+    this.root = this.shadowRoot.querySelector(".root");
   }
 
   connectedCallback() {
-    this.root = this.shadowRoot.querySelector(".root");
     this.label = this.shadowRoot.querySelector(".trigger-label");
     this.panel = this.shadowRoot.querySelector(".panel");
     this.bubbles = this.shadowRoot.querySelector(".bubbles");
@@ -683,7 +681,8 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
   }
 
   applyConfigFromAttributes() {
-    const s = this.style;
+    if (!this.root) return;
+    const s = this.root.style;
     if (this.getAttribute("primary-color")) s.setProperty("--aw-primary", this.getAttribute("primary-color"));
     if (this.getAttribute("accent-color")) s.setProperty("--aw-accent", this.getAttribute("accent-color"));
     if (this.getAttribute("bg-color")) s.setProperty("--aw-bg", this.getAttribute("bg-color"));
@@ -802,7 +801,7 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
     this.panel.style.maxWidth = "";
 
     const triggerRect = trigger.getBoundingClientRect();
-    const cs = getComputedStyle(this);
+    const cs = getComputedStyle(this.root || this);
     const panelHeight = parseInt(cs.getPropertyValue("--aw-height")) || this.panel.offsetHeight || 460;
     const panelWidth = parseInt(cs.getPropertyValue("--aw-width")) || this.panel.offsetWidth || 340;
     const gap = 12;
@@ -850,9 +849,11 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
     const wasActive = this.mode === "listening" || this.mode === "speaking";
     const isActive = mode === "listening" || mode === "speaking";
     this.mode = mode;
-    this.setAttribute("data-mode", mode);
-    this.setAttribute("data-call-active", isActive ? "true" : "false");
-    this.style.setProperty("--aw-mode-color", MODE_COLORS[mode] || MODE_COLORS.idle);
+    if (this.root) {
+      this.root.setAttribute("data-mode", mode);
+      this.root.setAttribute("data-call-active", isActive ? "true" : "false");
+      this.root.style.setProperty("--aw-mode-color", MODE_COLORS[mode] || MODE_COLORS.idle);
+    }
 
     if (this.statusLabel) this.statusLabel.textContent = MODE_LABELS[mode] || "";
     if (this.messages && !this.errorBanner?.classList.contains("visible")) {
@@ -874,7 +875,7 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
     } else if (!isActive && wasActive) {
       this.stopCallTimer();
       this.stopLevelLoop();
-      this.style.setProperty("--aw-level", "0");
+      if (this.root) this.root.style.setProperty("--aw-level", "0");
     }
     if (mode === "idle" && this.isMuted) this.setMuted(false);
   }
@@ -1134,7 +1135,7 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
         for (let i = 0; i < buf.length; i += 1) if (buf[i] > peak) peak = buf[i];
         level = Math.min(1, (peak / 255) * 1.4);
       }
-      this.style.setProperty("--aw-level", level.toFixed(3));
+      if (this.root) this.root.style.setProperty("--aw-level", level.toFixed(3));
       this.levelFrame = requestAnimationFrame(tick);
     };
     this.levelFrame = requestAnimationFrame(tick);
@@ -1193,7 +1194,7 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
     this.speakingTimer = null;
     this.stopLevelLoop();
     this.stopCallTimer();
-    this.style.setProperty("--aw-level", "0");
+    if (this.root) this.root.style.setProperty("--aw-level", "0");
     this.isMuted = false;
     if (this.micBtn) {
       this.micBtn.classList.remove("muted");
