@@ -47,26 +47,28 @@ The UMD bundle registers the `<ambernexus-bubble-widget>` element and also expos
   accent-color="#f472b6"
   width="320px"
   height="380px"
-  agent-id="your-agent-id"
-  user-id="12"
-  secs-left="600"
-  origin="browser"
-  overrides='{"timezone":"Asia/Kolkata","dynamic_variables":{}}'
+  signed-url-endpoint="https://your-backend.example.com/api/signedUrl"
 ></ambernexus-bubble-widget>
 
 <script src="https://cdn.jsdelivr.net/npm/ai_bot_voice/dist/ambernexus-ai_bot_voice.min.js"></script>
 <script>
   const w = document.querySelector("ambernexus-bubble-widget");
-  w.addEventListener("aw:start", (e) => console.log("started", e.detail));
+  w.addEventListener("aw:start", () => console.log("started"));
   w.addEventListener("aw:mode", (e) => console.log("mode", e.detail.mode));
   w.addEventListener("aw:error", (e) => console.error(e.detail.message));
 </script>
 ```
 
+The widget holds **no secrets**. It only needs `signed-url-endpoint`, which points at
+your own backend (`POST /api/signedUrl`). That backend proxies the Voice API, keeps the
+`VOICE_API_KEY` server-side, and injects the agent/session config from env vars — so the
+browser never sees an API key, agent id, or any session params. See
+[Backend endpoint reference](#backend-endpoint-reference) below.
+
 ### Auto-init from `data-ai-bot-voice`
 
 ```html
-<div data-ai-bot-voice agent-id="your-agent-id" user-id="12"></div>
+<div data-ai-bot-voice signed-url-endpoint="https://your-backend.example.com/api/signedUrl"></div>
 <script src="https://cdn.jsdelivr.net/npm/ai_bot_voice/dist/ambernexus-ai_bot_voice.min.js"></script>
 <script>AmbernexusAiBotVoice.autoInit();</script>
 ```
@@ -79,13 +81,11 @@ import { AmbernexusBubbleWidget } from "ai_bot_voice/react";
 export default function App() {
   return (
     <AmbernexusBubbleWidget
-      agentId="your-agent-id"
-      userId="12"
+      signedUrlEndpoint="https://your-backend.example.com/api/signedUrl"
       primaryColor="#db2777"
       width="320px"
       height="380px"
-      overrides={{ timezone: "Asia/Kolkata", dynamic_variables: {} }}
-      onStart={(e) => console.log("started", e.detail)}
+      onStart={() => console.log("started")}
       onMode={(e) => console.log("mode", e.detail.mode)}
       onError={(e) => console.error(e.detail.message)}
     />
@@ -102,7 +102,7 @@ The widget uses browser-only APIs (`document`, `customElements`, `WebSocket`, `A
 import { AmbernexusBubbleWidget } from "ai_bot_voice/react";
 
 export default function Page() {
-  return <AmbernexusBubbleWidget agentId="your-agent-id" userId="12" />;
+  return <AmbernexusBubbleWidget signedUrlEndpoint="https://your-backend.example.com/api/signedUrl" />;
 }
 ```
 
@@ -136,7 +136,7 @@ import dynamic from "next/dynamic";
 const Widget = dynamic(() => import("./WidgetClient"), { ssr: false });
 
 export default function Page() {
-  return <Widget agentId="…" userId="12" />;
+  return <Widget signedUrlEndpoint="https://your-backend.example.com/api/signedUrl" />;
 }
 ```
 
@@ -149,11 +149,9 @@ import { AmbernexusBubbleWidget } from "ai_bot_voice/vue";
 
 <template>
   <AmbernexusBubbleWidget
-    agent-id="your-agent-id"
-    user-id="12"
+    signed-url-endpoint="https://your-backend.example.com/api/signedUrl"
     primary-color="#db2777"
-    :overrides="{ timezone: 'Asia/Kolkata', dynamic_variables: {} }"
-    @aw:start="(e) => console.log('started', e.detail)"
+    @aw:start="() => console.log('started')"
     @aw:error="(e) => console.error(e.detail.message)"
   />
 </template>
@@ -182,7 +180,7 @@ import "ai_bot_voice";
 </script>
 
 <template>
-  <ambernexus-bubble-widget agent-id="..." user-id="12" />
+  <ambernexus-bubble-widget signed-url-endpoint="https://your-backend.example.com/api/signedUrl" />
 </template>
 ```
 
@@ -201,7 +199,7 @@ export class AppModule {}
 ```
 
 ```html
-<ambernexus-bubble-widget agent-id="your-agent-id" user-id="12"></ambernexus-bubble-widget>
+<ambernexus-bubble-widget signed-url-endpoint="https://your-backend.example.com/api/signedUrl"></ambernexus-bubble-widget>
 ```
 
 ### Vite / Create React App / vanilla bundlers
@@ -215,16 +213,11 @@ import "ai_bot_voice";
 
 ## Attributes
 
-All attributes are optional except `agent-id` (required to start a call).
+All attributes are optional except `signed-url-endpoint` (required to start a call).
 
 | Attribute              | Type    | Default                          | Notes                                              |
 | ---------------------- | ------- | -------------------------------- | -------------------------------------------------- |
-| `agent-id`             | string  | —                                | **Required.** Voice agent identifier.              |
-| `user-id`              | string  | `""`                             | Identifies the caller.                             |
-| `secs-left`            | number  | `600`                            | Remaining call seconds.                            |
-| `origin`               | string  | `"browser"`                      | Origin tag forwarded to the backend.               |
-| `signed-url-endpoint`  | string  | Ambernexus default               | Override the signed-URL endpoint.                  |
-| `overrides`            | JSON    | `{"timezone":"Asia/Kolkata"}`    | JSON-stringified `{ timezone, dynamic_variables }` |
+| `signed-url-endpoint`  | string  | —                                | **Required.** Your backend `POST /api/signedUrl` URL. No default. |
 | `button-label`         | string  | `"Ask Revo AI"`                  | Trigger pill label.                                |
 | `bubble-count`         | number  | `28`                             | Animated background bubble count.                  |
 | `primary-color`        | CSS     | `#4466ee`                        | `--aw-primary`                                     |
@@ -233,6 +226,9 @@ All attributes are optional except `agent-id` (required to start a call).
 | `text-color`           | CSS     | `#ffffff`                        | `--aw-text`                                        |
 | `width`                | CSS     | `340px`                          | `--aw-width`                                       |
 | `height`               | CSS     | `460px`                          | `--aw-height`                                      |
+
+The widget POSTs an **empty body** (`{}`) with **no API key** to `signed-url-endpoint`
+and expects `{ "signedUrl": "..." }` back. All agent/session config lives on the backend.
 
 ### CSS custom properties
 
@@ -248,7 +244,7 @@ The custom element dispatches the following `CustomEvent`s:
 | ----------- | ---------------------------------------------- |
 | `aw:open`   | —                                              |
 | `aw:close`  | —                                              |
-| `aw:start`  | `{ agentId, userId, secsLeft, origin, overrides }` |
+| `aw:start`  | —                                              |
 | `aw:stop`   | —                                              |
 | `aw:mode`   | `{ mode: "idle" \| "connecting" \| "listening" \| "speaking" }` |
 | `aw:mute`   | `{ muted: boolean }`                           |
@@ -268,8 +264,83 @@ w.start();         // begin a call
 w.stop();          // end a call
 w.toggleMute();    // toggle the microphone
 w.setMuted(true);  // set mute explicitly
-w.configure({ primaryColor: "#f00", overrides: { timezone: "UTC" } });
+w.configure({ primaryColor: "#f00", signedUrlEndpoint: "https://your-backend.example.com/api/signedUrl" });
 ```
+
+---
+
+## Backend endpoint reference
+
+The widget points `signed-url-endpoint` at **your own backend**, which proxies the Voice
+API so the `VOICE_API_KEY` is never exposed to the browser. This is the contract the
+widget expects.
+
+### `POST /api/signedUrl`
+
+Generates a short-lived **signed URL** for the Voice API.
+
+|              |                                 |
+| ------------ | ------------------------------- |
+| Method       | `POST`                          |
+| URL          | `/api/signedUrl`                |
+| Auth         | None (server holds the API key) |
+| Content-Type | `application/json`              |
+
+**Request body** — optional. The widget always sends an empty body (`{}`). You may
+optionally forward `dynamic_variables` (object) to the Voice API as overrides; an empty
+body or no body is also valid.
+
+```json
+{
+  "dynamic_variables": { "user_name": "Naga", "plan": "pro" }
+}
+```
+
+**Success — `200 OK`**
+
+```json
+{ "signedUrl": "https://voice.example.com/session?token=..." }
+```
+
+The widget also accepts `signed_url`, `url`, or a bare string for backwards compatibility.
+
+**Error responses**
+
+| Status | Body                                                              | When                            |
+| ------ | ---------------------------------------------------------------- | ------------------------------- |
+| 400    | `{ "success": false, "message": "Invalid JSON in request body" }` | Request body is malformed JSON. |
+| 500    | `{ "message": "Failed to generate signed URL", "error": ... }`    | Upstream Voice API call failed. |
+
+**Example**
+
+```bash
+curl -X POST https://your-backend.example.com/api/signedUrl \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+> **PowerShell note:** quoting differs — use
+>
+> ```powershell
+> curl -Method POST https://your-backend.example.com/api/signedUrl -ContentType "application/json" -Body '{}'
+> ```
+
+### Backend environment variables
+
+The endpoint calls an external Voice API. Configure these in the backend's `.env`:
+
+| Variable          | Description                                          | Default        |
+| ----------------- | ---------------------------------------------------- | -------------- |
+| `VOICE_API_URL`   | URL of the external Voice API signed-URL endpoint    | —              |
+| `VOICE_API_KEY`   | Secret API key for the Voice API (server-side only)  | —              |
+| `VOICE_AGENT_ID`  | Voice agent identifier                               | —              |
+| `VOICE_USER_ID`   | User identifier forwarded to the Voice API           | `12`           |
+| `VOICE_TIMEZONE`  | Timezone forwarded to the Voice API                  | `Asia/Kolkata` |
+| `VOICE_SECS_LEFT` | Session length in seconds                            | `600`          |
+| `VOICE_ORIGIN`    | Origin label forwarded to the Voice API              | `browser`      |
+
+For local development, point the widget at your dev server, e.g.
+`signed-url-endpoint="http://localhost:5000/api/signedUrl"`.
 
 ---
 

@@ -1,7 +1,5 @@
 import type { DefineComponent } from "vue";
 import type {
-  AiBotOverrides,
-  AiBotStartDetail,
   AiBotModeDetail,
   AiBotMuteDetail,
   AiBotErrorDetail
@@ -16,18 +14,13 @@ export interface AmbernexusBubbleWidgetProps {
   height?: string;
   buttonLabel?: string;
   bubbleCount?: number | string;
-  agentId?: string;
-  userId?: string;
-  secsLeft?: number | string;
-  origin?: string;
   signedUrlEndpoint?: string;
-  overrides?: AiBotOverrides | string;
 }
 
 export interface AmbernexusBubbleWidgetEmits {
   "aw:open": (e: CustomEvent<void>) => void;
   "aw:close": (e: CustomEvent<void>) => void;
-  "aw:start": (e: CustomEvent<AiBotStartDetail>) => void;
+  "aw:start": (e: CustomEvent<void>) => void;
   "aw:stop": (e: CustomEvent<void>) => void;
   "aw:mode": (e: CustomEvent<AiBotModeDetail>) => void;
   "aw:mute": (e: CustomEvent<AiBotMuteDetail>) => void;

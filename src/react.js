@@ -8,13 +8,9 @@ const ATTR_MAP = {
   textColor: "text-color",
   buttonLabel: "button-label",
   bubbleCount: "bubble-count",
-  agentId: "agent-id",
-  userId: "user-id",
-  secsLeft: "secs-left",
   signedUrlEndpoint: "signed-url-endpoint",
   width: "width",
-  height: "height",
-  origin: "origin"
+  height: "height"
 };
 
 const EVENT_PROP_MAP = {
@@ -39,19 +35,6 @@ const AmbernexusBubbleWidget = forwardRef(function AmbernexusBubbleWidget(props,
   useEffect(() => {
     const el = elementRef.current;
     if (!el) return undefined;
-    if (props.overrides !== undefined) {
-      const value = typeof props.overrides === "string"
-        ? props.overrides
-        : JSON.stringify(props.overrides);
-      el.setAttribute("overrides", value);
-    } else {
-      el.removeAttribute("overrides");
-    }
-  }, [props.overrides]);
-
-  useEffect(() => {
-    const el = elementRef.current;
-    if (!el) return undefined;
     const offs = [];
     Object.entries(EVENT_PROP_MAP).forEach(([propName, eventName]) => {
       const handler = props[propName];
@@ -66,7 +49,7 @@ const AmbernexusBubbleWidget = forwardRef(function AmbernexusBubbleWidget(props,
 
   const elementProps = { ref: elementRef };
   Object.entries(props).forEach(([key, value]) => {
-    if (key === "overrides" || key === "children" || key in EVENT_PROP_MAP) return;
+    if (key === "children" || key in EVENT_PROP_MAP) return;
     const attrName = ATTR_MAP[key] || key;
     if (value === undefined || value === null || value === false) return;
     elementProps[attrName] = value === true ? "" : String(value);

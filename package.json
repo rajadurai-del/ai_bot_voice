@@ -1,6 +1,6 @@
 {
   "name": "ai_bot_voice",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Ambernexus AI voice bubble widget — a framework-agnostic Web Component for browser-based real-time voice conversations with React, Vue, Next.js, Angular, Vite, and vanilla HTML/JS support.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -82,8 +82,12 @@
     "vue": ">=3.0.0"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": true },
-    "vue": { "optional": true }
+    "react": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^15.2.3",

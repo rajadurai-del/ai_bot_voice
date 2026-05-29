@@ -1,5 +1,3 @@
-const DEFAULT_SIGNED_URL_ENDPOINT = "https://voice-api.ambernexus.ai:4011/api/conversation/signedUrl";
-const DEFAULT_API_KEY = "vA9wjNYv97D4QrSJ8AfHu1rjHWRcfAYWqUk7zy2EByF4qweQTXQmDQf7vj8NZm6F";
 const TAG_NAME = "ambernexus-bubble-widget";
 
 const MODE_LABELS = {
@@ -567,12 +565,7 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
       "height",
       "button-label",
       "bubble-count",
-      "agent-id",
-      "user-id",
-      "secs-left",
-      "origin",
-      "signed-url-endpoint",
-      "overrides"
+      "signed-url-endpoint"
     ];
   }
 
@@ -583,10 +576,6 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
     this.isAnimating = false;
     this.points = [];
     this.frame = null;
-    this.overrides = {
-      timezone: "Asia/Kolkata",
-      dynamic_variables: {}
-    };
     this.mode = "idle";
     this.ws = null;
     this.micStream = null;
@@ -649,35 +638,9 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
 
   configure(config = {}) {
     Object.entries(config).forEach(([k, v]) => {
-      if (k === "overrides" && v && typeof v === "object") {
-        this.overrides = {
-          ...this.overrides,
-          ...v,
-          dynamic_variables: {
-            ...(this.overrides.dynamic_variables || {}),
-            ...(v.dynamic_variables || {})
-          }
-        };
-        return;
-      }
       const attr = k.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
       this.setAttribute(attr, String(v));
     });
-  }
-
-  getStartParams() {
-    const secsLeftAttr = this.getAttribute("secs-left");
-    const secsLeft = secsLeftAttr === null ? 600 : Number(secsLeftAttr);
-    return {
-      agentId: this.getAttribute("agent-id") || "",
-      userId: this.getAttribute("user-id") || "",
-      secsLeft: Number.isFinite(secsLeft) ? secsLeft : 600,
-      origin: this.getAttribute("origin") || "browser",
-      overrides: {
-        timezone: this.overrides.timezone || "Asia/Kolkata",
-        dynamic_variables: this.overrides.dynamic_variables || {}
-      }
-    };
   }
 
   applyConfigFromAttributes() {
@@ -692,21 +655,6 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
 
     const label = this.getAttribute("button-label");
     if (this.label && label) this.label.textContent = label;
-
-    const overridesAttr = this.getAttribute("overrides");
-    if (overridesAttr) {
-      try {
-        const parsed = JSON.parse(overridesAttr);
-        if (parsed && typeof parsed === "object") {
-          this.overrides = {
-            timezone: parsed.timezone || this.overrides.timezone,
-            dynamic_variables: parsed.dynamic_variables || {}
-          };
-        }
-      } catch {
-        /* ignore malformed JSON */
-      }
-    }
   }
 
   renderBubbles() {
@@ -905,13 +853,12 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
   async start() {
     if (this.mode !== "idle") return;
     this.clearError();
-    const params = this.getStartParams();
-    if (!params.agentId) {
-      this.showError("Missing agent-id attribute.");
-      this.dispatchEvent(new CustomEvent("aw:error", { detail: { message: "Missing agent-id" } }));
+    const endpoint = this.getAttribute("signed-url-endpoint");
+    if (!endpoint) {
+      this.showError("Missing signed-url-endpoint attribute.");
+      this.dispatchEvent(new CustomEvent("aw:error", { detail: { message: "Missing signed-url-endpoint" } }));
       return;
     }
-    const endpoint = this.getAttribute("signed-url-endpoint") || DEFAULT_SIGNED_URL_ENDPOINT;
 
     this.setMode("connecting");
     this.shadowRoot.querySelector(".orb-shell").classList.add("started");
@@ -920,11 +867,11 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
     this.isAnimating = true;
     cancelAnimationFrame(this.frame);
     this.animate();
-    this.dispatchEvent(new CustomEvent("aw:start", { detail: params }));
+    this.dispatchEvent(new CustomEvent("aw:start"));
 
     try {
-      const signedUrl = await this.fetchSignedUrl(endpoint, params);
-      await this.openSession(signedUrl, params);
+      const signedUrl = await this.fetchSignedUrl(endpoint);
+      await this.openSession(signedUrl);
     } catch (err) {
       const message = err?.message || String(err);
       this.dispatchEvent(new CustomEvent("aw:error", { detail: { message } }));
@@ -939,21 +886,12 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
     }
   }
 
-  async fetchSignedUrl(endpoint, params) {
-    const apiKey = DEFAULT_API_KEY;
-    const headers = { "Content-Type": "application/json" };
-    if (apiKey) headers["x-api-key"] = apiKey;
-    const body = {
-      agentId: params.agentId,
-      userId: params.userId,
-      overrides: {
-        timezone: params.overrides.timezone || "Asia/Kolkata",
-        dynamic_variables: params.overrides.dynamic_variables || {}
-      },
-      secsLeft: params.secsLeft,
-      origin: params.origin
-    };
-    const res = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+  async fetchSignedUrl(endpoint) {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
     if (!res.ok) throw new Error(`Signed URL request failed (${res.status})`);
     const data = await res.json().catch(() => null);
     const url = data && (data.signedUrl || data.signed_url || data.url || (typeof data === "string" ? data : null));
@@ -961,7 +899,7 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
     return url;
   }
 
-  openSession(signedUrl, params) {
+  openSession(signedUrl) {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket(signedUrl);
       this.ws = ws;
@@ -973,7 +911,7 @@ class AmbernexusBubbleWidget extends HTMLElementCtor {
           type: "conversation_initiation_client_data",
           conversation_config_override: { agent: {}, tts: {} },
           custom_llm_extra_body: {},
-          dynamic_variables: params.overrides.dynamic_variables || {}
+          dynamic_variables: {}
         }));
         this.startMicCapture().then(() => {
           this.setMode("listening");

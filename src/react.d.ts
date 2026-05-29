@@ -1,8 +1,6 @@
 import type { ForwardRefExoticComponent, RefAttributes } from "react";
 import type {
   AmbernexusBubbleWidget as ElementClass,
-  AiBotOverrides,
-  AiBotStartDetail,
   AiBotModeDetail,
   AiBotMuteDetail,
   AiBotErrorDetail
@@ -17,16 +15,11 @@ export interface AmbernexusBubbleWidgetProps {
   height?: string;
   buttonLabel?: string;
   bubbleCount?: number;
-  agentId?: string;
-  userId?: string;
-  secsLeft?: number;
-  origin?: string;
   signedUrlEndpoint?: string;
-  overrides?: AiBotOverrides | string;
 
   onOpen?: (event: CustomEvent<void>) => void;
   onClose?: (event: CustomEvent<void>) => void;
-  onStart?: (event: CustomEvent<AiBotStartDetail>) => void;
+  onStart?: (event: CustomEvent<void>) => void;
   onStop?: (event: CustomEvent<void>) => void;
   onMode?: (event: CustomEvent<AiBotModeDetail>) => void;
   onMute?: (event: CustomEvent<AiBotMuteDetail>) => void;

@@ -1,18 +1,5 @@
 export type AiBotMode = "idle" | "connecting" | "listening" | "speaking";
 
-export interface AiBotOverrides {
-  timezone?: string;
-  dynamic_variables?: Record<string, unknown>;
-}
-
-export interface AiBotStartDetail {
-  agentId: string;
-  userId: string;
-  secsLeft: number;
-  origin: string;
-  overrides: Required<AiBotOverrides>;
-}
-
 export interface AiBotErrorDetail {
   message: string;
 }
@@ -34,18 +21,13 @@ export interface AiBotConfig {
   height?: string;
   buttonLabel?: string;
   bubbleCount?: number;
-  agentId?: string;
-  userId?: string;
-  secsLeft?: number;
-  origin?: string;
   signedUrlEndpoint?: string;
-  overrides?: AiBotOverrides;
 }
 
 export interface AmbernexusBubbleWidgetEventMap extends HTMLElementEventMap {
   "aw:open": CustomEvent<void>;
   "aw:close": CustomEvent<void>;
-  "aw:start": CustomEvent<AiBotStartDetail>;
+  "aw:start": CustomEvent<void>;
   "aw:stop": CustomEvent<void>;
   "aw:mode": CustomEvent<AiBotModeDetail>;
   "aw:mute": CustomEvent<AiBotMuteDetail>;
@@ -56,7 +38,6 @@ export class AmbernexusBubbleWidget extends HTMLElement {
   mode: AiBotMode;
   isOpen: boolean;
   isMuted: boolean;
-  overrides: Required<AiBotOverrides>;
 
   configure(config: AiBotConfig): void;
   open(): void;
