@@ -27,9 +27,9 @@ pnpm add ai_bot_voice
 ## CDN (no install)
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/ai_bot_voice/dist/ambernexus-ai_bot_voice.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ai_bot_voice@latest/dist/ambernexus-ai_bot_voice.min.js"></script>
 <!-- or -->
-<script src="https://unpkg.com/ai_bot_voice/dist/ambernexus-ai_bot_voice.min.js"></script>
+<script src="https://unpkg.com/ai_bot_voice@latest/dist/ambernexus-ai_bot_voice.min.js"></script>
 ```
 
 The UMD bundle registers the `<ambernexus-bubble-widget>` element and also exposes a global `window.AmbernexusAiBotVoice` namespace containing `{ AmbernexusBubbleWidget, register, autoInit, TAG_NAME }`.
@@ -50,7 +50,7 @@ The UMD bundle registers the `<ambernexus-bubble-widget>` element and also expos
   signed-url-endpoint="https://your-backend.example.com/api/signedUrl"
 ></ambernexus-bubble-widget>
 
-<script src="https://cdn.jsdelivr.net/npm/ai_bot_voice/dist/ambernexus-ai_bot_voice.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ai_bot_voice@latest/dist/ambernexus-ai_bot_voice.min.js"></script>
 <script>
   const w = document.querySelector("ambernexus-bubble-widget");
   w.addEventListener("aw:start", () => console.log("started"));
@@ -69,7 +69,7 @@ browser never sees an API key, agent id, or any session params. See
 
 ```html
 <div data-ai-bot-voice signed-url-endpoint="https://your-backend.example.com/api/signedUrl"></div>
-<script src="https://cdn.jsdelivr.net/npm/ai_bot_voice/dist/ambernexus-ai_bot_voice.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ai_bot_voice@latest/dist/ambernexus-ai_bot_voice.min.js"></script>
 <script>AmbernexusAiBotVoice.autoInit();</script>
 ```
 
@@ -272,8 +272,37 @@ w.configure({ primaryColor: "#f00", signedUrlEndpoint: "https://your-backend.exa
 ## Backend endpoint reference
 
 The widget points `signed-url-endpoint` at **your own backend**, which proxies the Voice
-API so the `VOICE_API_KEY` is never exposed to the browser. This is the contract the
-widget expects.
+API so the `VOICE_API_KEY` is never exposed to the browser. The browser only ever talks
+to your backend; the backend holds the secret and injects the agent/session config.
+
+### Architecture
+
+```
+Browser widget                    Your Express backend                External Voice API
+     │                                      │                                  │
+     │  POST /api/signedUrl                 │                                  │
+     │  { dynamic_variables: {...} }        │                                  │
+     │─────────────────────────────────────►│                                  │
+     │                                      │  POST .../conversation/signedUrl │
+     │                                      │  x-api-key: <secret>             │
+     │                                      │  { agentId, userId, overrides… } │
+     │                                      │─────────────────────────────────►│
+     │                                      │                                  │
+     │                                      │  { signedUrl: "wss......" }      │
+     │                                      │◄─────────────────────────────────│
+     │  { signedUrl: "wss......" }          │                                  │
+     │◄─────────────────────────────────────│                                  │
+     │                                      │                                  │
+     │  connects directly to the signedUrl  │                                  │
+```
+
+**Flow**
+
+```
+Browser ──POST /api/signedUrl──► Express backend ──x-api-key──► Voice API
+        ◄──── { signedUrl } ────                ◄── { signedUrl } ──
+Browser ───────── connects directly to the signedUrl ──────────►
+```
 
 ### `POST /api/signedUrl`
 
@@ -286,37 +315,34 @@ Generates a short-lived **signed URL** for the Voice API.
 | Auth         | None (server holds the API key) |
 | Content-Type | `application/json`              |
 
-**Request body** — optional. The widget always sends an empty body (`{}`). You may
-optionally forward `dynamic_variables` (object) to the Voice API as overrides; an empty
-body or no body is also valid.
+**Request body** (all optional)
+
+| Field               | Type   | Description                                                                                              |
+| ------------------- | ------ | -------------------------------------------------------------------------------------------------------- |
+| `dynamic_variables` | object | Per-call values forwarded to the agent (e.g. `user_name`, `plan`) for personalization. Defaults to `{}`. |
+
+The widget itself always sends an empty body (`{}`); `dynamic_variables` is available if
+you call the endpoint directly. The backend forwards the body to the Voice API as:
 
 ```json
 {
-  "dynamic_variables": { "user_name": "Naga", "plan": "pro" }
+  "agentId": "<VOICE_AGENT_ID>",
+  "userId": "<VOICE_USER_ID>",
+  "overrides": {
+    "timezone": "<VOICE_TIMEZONE>",
+    "dynamic_variables": { /* your dynamic_variables */ }
+  },
+  "secsLeft": 600,
+  "origin": "browser"
 }
 ```
 
-**Success — `200 OK`**
-
-```json
-{ "signedUrl": "https://voice.example.com/session?token=..." }
-```
-
-The widget also accepts `signed_url`, `url`, or a bare string for backwards compatibility.
-
-**Error responses**
-
-| Status | Body                                                              | When                            |
-| ------ | ---------------------------------------------------------------- | ------------------------------- |
-| 400    | `{ "success": false, "message": "Invalid JSON in request body" }` | Request body is malformed JSON. |
-| 500    | `{ "message": "Failed to generate signed URL", "error": ... }`    | Upstream Voice API call failed. |
-
-**Example**
+**Example request**
 
 ```bash
 curl -X POST https://your-backend.example.com/api/signedUrl \
   -H "Content-Type: application/json" \
-  -d '{}'
+  -d '{ "dynamic_variables": { "user_name": "Naga", "plan": "premium" } }'
 ```
 
 > **PowerShell note:** quoting differs — use
@@ -324,6 +350,27 @@ curl -X POST https://your-backend.example.com/api/signedUrl \
 > ```powershell
 > curl -Method POST https://your-backend.example.com/api/signedUrl -ContentType "application/json" -Body '{}'
 > ```
+
+**Success response** — `200 OK`
+
+```json
+{
+  "signedUrl": "wss......"
+}
+```
+
+The widget also accepts `signed_url`, `url`, or a bare string for backwards compatibility.
+
+**Error response** — `500 Internal Server Error`
+
+```json
+{
+  "message": "Failed to generate signed URL",
+  "error": "<details from the Voice API or request failure>"
+}
+```
+
+A malformed JSON request body returns `400 { "success": false, "message": "Invalid JSON in request body" }`.
 
 ### Backend environment variables
 
